@@ -1,0 +1,34 @@
+# Render Blueprint: one web service (Express API + built React app) and one Postgres DB.
+# Both are on free plans. The free DB expires 30 days after creation, so upgrade it
+# before then (change `plan: free` below to a paid plan such as 0.5c-1g) to keep your data.
+services:
+  - type: web
+    name: spanish-stage1
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    # Migrations + seed run at server start (pre-deploy commands aren't available on free web services).
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: spanish-stage1-db
+          property: connectionString
+      - key: APP_PASSWORD
+        sync: false # you are prompted for this when the Blueprint is created
+      - key: SESSION_SECRET
+        generateValue: true
+
+databases:
+  - name: spanish-stage1-db
+    plan: free
+    databaseName: spanish
+    user: spanish
+    postgresMajorVersion: "17"
+    ipAllowList: [] # only reachable from Render services in this account
